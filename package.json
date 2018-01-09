@@ -1,0 +1,32 @@
+{
+  "name": "felisjs",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "license": "MIT",
+  "author": "PhytonMK",
+  "keywords": "statement-container state flux",
+  "description": "Simple statement container with timetraveling",
+  "homepage": "https://github.com/Phytonmk/felisjs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Phytonmk/felisjs"
+  },
+  "scripts": {
+    "build": "gulp",
+    "watch": "gulp watch",
+    "test": "test/main.js"
+  },
+  "bugs": {
+    "url": "https://github.com/Phytonmk/felisjs/issus",
+    "email": "phytonmk@yandex.ru"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-register": "^6.26.0",
+    "gulp": "^3.9.1",
+    "gulp-babel": "^7.0.0",
+    "gulp-uglify": "^3.0.0"
+  }
+}
