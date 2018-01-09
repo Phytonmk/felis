@@ -19,6 +19,11 @@ Using
 
 ### Initialization
 
+You can either use ```require()``` or just add script by using 
+```
+<script src="<address to felisjs>"></sciprt>
+```
+
 ```js
 const Storage = require('felisjs');
 
