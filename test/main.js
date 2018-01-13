@@ -26,6 +26,15 @@ const testes = [()=>{
   try {testes[currentTest]()} catch (e) {fail(e)};
 },
 ()=>{
+  let fail = true;
+  storage.sub(() => {fail = false});
+  storage.valueStorage.set(5);
+  if (fail)
+    fail('Storage cant handle lifting calling event')
+  currentTest++;
+  try {testes[currentTest]()} catch (e) {fail(e)};
+},
+()=>{
   storage.valueStorage.unsub(foo);
   storage.valueStorage.unsubscribe(bar);
   storage.valueStorage.set(1);
@@ -37,7 +46,7 @@ const testes = [()=>{
 ()=>{
   storage.valueStorage.sub(foo);
   storage2 = storage.clone(true);
-  if (JSON.stringify(storage) !== JSON.stringify(storage2))
+  if (storage.valueStorage.__STORAGE__.subscribers[0] !== storage2.valueStorage.__STORAGE__.subscribers[0])
     fail('Storage cant be cloned with subscribers properly')
   currentTest++;
   try {testes[currentTest]()} catch (e) {fail(e)};
