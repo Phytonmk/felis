@@ -14,7 +14,7 @@
   "scripts": {
     "build": "gulp",
     "watch": "gulp watch",
-    "test": "node test/main.js"
+    "test": "test/main.js"
   },
   "bugs": {
     "url": "https://github.com/Phytonmk/felisjs/issus",
@@ -27,7 +27,6 @@
     "babel-register": "^6.26.0",
     "gulp": "^3.9.1",
     "gulp-babel": "^7.0.0",
-    "gulp-concat": "^2.6.1",
     "gulp-uglify": "^3.0.0"
   }
 }

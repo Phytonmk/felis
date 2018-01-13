@@ -1,218 +1,129 @@
-class Storage {
-  constructor (init, defaultValue, parentStorage) {
-    this.__STORAGE__ = {};
-    this.__STORAGE__.subscribers = [];
-    if (parentStorage) {
-      this.__STORAGE__.parent = parentStorage;
-    }
+'use strict';
+// export default class Storage {
+export default class Storage {
+  constructor (init, defaultValue) {
+    this.STORAGE_SUBSCRIBERS = [];
     if (init != undefined && init != null) {
       if (typeof init === 'object' && !Array.isArray(init) && !init.NOT_STORAGE) {
         for (let i in init)
-          this[i] = new Storage(init[i], undefined, this);
+          this[i] = new Storage(init[i]);
       } else {
-        if (Array.isArray(init))
-          this.__STORAGE__.value = [...init];
-        if (init.NOT_STORAGE)
-          this.__STORAGE__.value = Object.assign({}, init);
+        this.STORAGE_VALUE = init;
       }
     } else {
       if (defaultValue != undefined)
-        this.__STORAGE__.value = defaultValue;
+        this.STORAGE_VALUE = defaultValue;
       else
-        this.__STORAGE__.value = null;
+        this.STORAGE_VALUE = null;
     }
-    const thisStorage = this;
-    this.__STORAGE__.methods = {
-      storage_update: function (newInitData, parent=false) {
-        if (parent)
-          thisStorage.__STORAGE__.parent = parent;
-        if (newInitData.__STORAGE__.value || typeof newInitData !== 'object' || Array.isArray(newInitData)) {
-          if (Array.isArray(newInitData))
-            thisStorage.__STORAGE__.value = [...newInitData];
-          else
-            thisStorage.__STORAGE__.value = newInitData.__STORAGE__.value;
-        } else {
-          for (let i in thisStorage) {
-            if (i != '__STORAGE__') {
-              if (newInitData[i] === undefined) {
-                delete thisStorage[i];
-              }
-            }
-          }
-          for (let i in newInitData) {
-            if (i != '__STORAGE__') {
-              if (thisStorage[i] !== undefined && typeof thisStorage[i].__STORAGE__.methods.storage_update === 'function' && thisStorage[i].__proto__ === thisStorage.__proto__) {
-                thisStorage[i].__STORAGE__.methods.storage_update(newInitData[i], parent);
-              } else {
-                thisStorage[i] = new Storage(newInitData[i], undefined, thisStorage);
-              }
-            }
-          }
-        }
-        if (newInitData && newInitData.__STORAGE__.subscribers) {
-          thisStorage.__STORAGE__.subscribers = newInitData.__STORAGE__.subscribers;
-        }
-      },
-      subscribersCallingFromRoot: function () {
-        for (let i = 0; i < thisStorage.__STORAGE__.subscribers.length; i++) {
-          thisStorage.__STORAGE__.subscribers[i].callback(thisStorage.__STORAGE__.value);
-        }
-        for (let i in thisStorage) {
-          if (i != '__STORAGE__') {
-            thisStorage[i].__STORAGE__.methods.subscribersCallingFromRoot();
-          }
-        }
-      },
-      subscribersCallingToRoot: function () {
-        // console.log('subscribersCallingToRoot');
-        for (let i = 0; i < thisStorage.__STORAGE__.subscribers.length; i++) {
-          thisStorage.__STORAGE__.subscribers[i].callback();
-        }
-        if (thisStorage.__STORAGE__.parent) {
-          thisStorage.__STORAGE__.parent.__STORAGE__.methods.subscribersCallingToRoot();
-        }
-      }
-    }
-    /*this.__STORAGE__.debug = (address='127.0.0.1', port='3000', polling=false) => {
-      const ip = (port === '' ? address : address + ':' + port);
-      if (process != undefined && process.version != undefined) { // node
-        const http = require('http');
-        http.get(ip, (res) => {
-          const { statusCode } = res;
-          const contentType = res.headers['content-type'];
-          let error;
-          if (statusCode !== 200) {
-            error = new Error('Request Failed.\n' +
-                      `Status Code: ${statusCode}`);
-          }
-          if (error) {
-            console.error(error.message);
-            res.resume();
-            return;
-          }
-          res.setEncoding('utf8');
-          let rawData = '';
-          res.on('data', (chunk) => { rawData += chunk; });
-          res.on('end', () => {
-            if (statusCode == 200)
-              console.log('ok')
-          });
-        }).on('error', console.log);
-      }
-    }*/
     return true;
   }
-  update (newInitData, silent=false) {
-    this.__STORAGE__.methods.storage_update(newInitData);
-    if (!silent)
-      this.__STORAGE__.methods.subscribersCallingFromRoot();
+  storage_update (newInitData) {
+    // console.log(newInitData);
+    if (newInitData.STORAGE_VALUE || typeof newInitData !== 'object' || Array.isArray(newInitData)) {
+      this.STORAGE_VALUE = newInitData.STORAGE_VALUE;
+    } else {
+      delete this.STORAGE_VALUE;
+      for (let i in this) {
+        if (i != 'STORAGE_VALUE' && i != 'STORAGE_SUBSCRIBERS') {
+          if (newInitData[i] === undefined) {
+            delete this[i];
+          }
+        }
+      }
+      for (let i in newInitData) {
+        if (i != 'STORAGE_VALUE' && i != 'STORAGE_SUBSCRIBERS') {
+          if (this[i] !== undefined && typeof this[i].storage_update === 'function' && this[i].__proto__ === this.__proto__) {
+            this[i].storage_update(newInitData[i]);
+          } else {
+            this[i] = new Storage(newInitData[i]);
+          }
+        }
+      }
+    }
+    if (newInitData && newInitData.STORAGE_SUBSCRIBERS) {
+      this.STORAGE_SUBSCRIBERS = newInitData.STORAGE_SUBSCRIBERS;
+    }
+  }
+  update (newInitData) {
+    this.storage_update(newInitData);
+    this.callAllSubscribers();
+  }
+  callAllSubscribers () {
+    // console.log(this);
+    for (let i = 0; i < this.STORAGE_SUBSCRIBERS.length; i++) {
+      this.STORAGE_SUBSCRIBERS[i].callback(this.STORAGE_VALUE);
+    }
+    for (let i in this) {
+      if (i != 'STORAGE_VALUE' && i != 'STORAGE_SUBSCRIBERS') {
+        this[i].callAllSubscribers();
+      }
+    }
   }
   set(value=null) {
-    this.__STORAGE__.value = value;
-    for (let i = 0; i < this.__STORAGE__.subscribers.length;) {
-      if (typeof this.__STORAGE__.subscribers[i].callback == 'function') {
-        if (this.__STORAGE__.subscribers[i].delayed) {
+    this.STORAGE_VALUE = value;
+    for (let i = 0; i < this.STORAGE_SUBSCRIBERS.length;) {
+      if (typeof this.STORAGE_SUBSCRIBERS[i].callback == 'function') {
+        if (this.STORAGE_SUBSCRIBERS[i].delayed) {
           setTimeout(() => {
-            this.__STORAGE__.subscribers[i].callback(this.__STORAGE__.value);
+            this.STORAGE_SUBSCRIBERS[i].callback(this.STORAGE_VALUE);
           }, 0);
         } else {
-          this.__STORAGE__.subscribers[i].callback(this.__STORAGE__.value);
+          this.STORAGE_SUBSCRIBERS[i].callback(this.STORAGE_VALUE);
         }
         i++;
       } else {
-        this.__STORAGE__.subscribers.splice(i, 1);
+        this.STORAGE_SUBSCRIBERS.splice(i, 1);
       }
-    }
-    if (this.__STORAGE__.parent) {
-      this.__STORAGE__.parent.__STORAGE__.methods.subscribersCallingToRoot();
     }
     return true;
   }
   get () {
-    return this.__STORAGE__.value;
+    return this.STORAGE_VALUE;
   }
   subscribe (callback, delayed=false, dontTestForDoubles=false) {
     let dontPush = false;
     if (!dontTestForDoubles) {
-      for (let i = 0; i < this.__STORAGE__.subscribers.length; i++) {
-        if (this.__STORAGE__.subscribers[i] === callback) {
+      for (let i = 0; i < this.STORAGE_SUBSCRIBERS.length; i++) {
+        if (this.STORAGE_SUBSCRIBERS[i] === callback) {
           dontPush = true;
           break;
         }
       }
     }
     if (!dontPush)
-      this.__STORAGE__.subscribers.push({delayed, callback});
-    return this.__STORAGE__.value;
+      this.STORAGE_SUBSCRIBERS.push({delayed, callback});
+    return this.STORAGE_VALUE;
   }
   sub(callback, delayed, dontTestForDoubles) {return this.subscribe(callback, delayed, dontTestForDoubles)}
   unsubscribe (callbackToUnsub) {
-    for (let i = 0; i < this.__STORAGE__.subscribers.length; i++) {
-      if (this.__STORAGE__.subscribers[i].callback === callbackToUnsub) {
-        this.__STORAGE__.subscribers.splice(i, 1);
+    for (let i = 0; i < this.STORAGE_SUBSCRIBERS.length; i++) {
+      if (this.STORAGE_SUBSCRIBERS[i].callback === callbackToUnsub) {
+        this.STORAGE_SUBSCRIBERS.splice(i, 1);
         break;
       }
     }
-    return this.__STORAGE__.value;
+    return this.STORAGE_VALUE;
   }
   unsub(callbackToUnsub) {return this.unsubscribe(callbackToUnsub)}
-  add (childrenName, defaultValue, ) {
-    if (childrenName == '__STORAGE__') {
+  add (childrenName, defaultValue) {
+    if (childrenName == 'STORAGE_VALUE' || childrenName == 'STORAGE_SUBSCRIBERS') {
       throw `Resticted name '${childrenName}'`
     } else {
-      this[childrenName] = new Storage(null, defaultValue, this);
+      this[childrenName] = new Storage(null, defaultValue);
       return true;
     }
   }
-  enableTimeTravelling (limit=100) {
-    this.__STORAGE__.timeTravelling = {};
-    this.__STORAGE__.timeTravelling.frames = [this.clone()];
-    this.__STORAGE__.timeTravelling.position = 0;
-    this.subscribe(() => {
-      while (this.__STORAGE__.timeTravelling.position > 0) {
-        this.__STORAGE__.timeTravelling.frames.shift();
-        this.__STORAGE__.timeTravelling.position--;
-      }
-      if (this.__STORAGE__.timeTravelling.frames.length < limit)
-        this.__STORAGE__.timeTravelling.frames.unshift(this.clone());
-    });
-  }
-  goBack(toEnd=false) {
-    if (this.__STORAGE__.timeTravelling != undefined) {
-      if (this.__STORAGE__.timeTravelling.position < this.__STORAGE__.timeTravelling.frames.length - 1) {
-        if (toEnd) {
-          this.__STORAGE__.timeTravelling.position = this.__STORAGE__.timeTravelling.frames.length - 1;
-        } else {
-          this.__STORAGE__.timeTravelling.position++;
-        }
-        this.update(this.__STORAGE__.timeTravelling.frames[this.__STORAGE__.timeTravelling.position], true);
-      }
-    }
-  }
-  goForward(toBegin=false) {
-    if (this.__STORAGE__.timeTravelling != undefined) {
-      if (this.__STORAGE__.timeTravelling.position > 0) {
-        if (toBegin) {
-          this.__STORAGE__.timeTravelling.position = 0;
-        } else {
-          this.__STORAGE__.timeTravelling.position--;
-        }
-        this.update(this.__STORAGE__.timeTravelling.frames[this.__STORAGE__.timeTravelling.position], true);
-      }
-    }
-  }
   clone (withSubscribers=true, parent=false) {
-    const result = new Storage(null, undefined, parent);
+    const result = new Storage();
     if (withSubscribers)
-      result.__STORAGE__.subscribers = [...this.__STORAGE__.subscribers];
-    if (this.__STORAGE__.value)
-      result.__STORAGE__.value = this.__STORAGE__.value;
-    if (parent) {
-      result.__STORAGE__parent = parent;
-    }
+      result.STORAGE_SUBSCRIBERS = [...this.STORAGE_SUBSCRIBERS];
     for (let i in this) {
-      if (i != '__STORAGE__') {
+      if (i != 'STORAGE_VALUE' && i != 'STORAGE_SUBSCRIBERS') {
         result[i] = this[i].clone(withSubscribers, result);
+      } else {
+        if (i != 'STORAGE_SUBSCRIBERS' || withSubscribers)
+        result[i] = this[i];
       }
     }
     return result;
